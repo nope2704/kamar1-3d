@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kamar 3×3 m — 3D Interaktif</title>
+<style>
+html,body{margin:0;height:100%;background:#11131a;color:#f5f6fa;font-family:system-ui,-apple-system,Segoe UI,Arial}
+#view{width:100%;height:100%;display:block}
+#panel{position:fixed;left:14px;top:14px;max-width:310px;background:#171a23e8;border:1px solid #555b70;border-radius:12px;padding:12px 14px;box-shadow:0 8px 30px #0007}
+#panel h1{font-size:16px;margin:0 0 7px}
+#panel p{font-size:12px;line-height:1.5;margin:4px 0;color:#d7d9e2}
+#buttons{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+button{background:#2b3040;color:white;border:1px solid #69718a;border-radius:7px;padding:7px 10px;cursor:pointer}
+button:hover{background:#3b4260}
+#hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:#171a23d9;padding:8px 12px;border-radius:9px;font-size:12px;text-align:center;white-space:nowrap}
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="panel">
+<h1>Kamar 3 × 3 m — model 3D</h1>
+<p>Tarik mouse / geser jari untuk memutar. Scroll atau pinch untuk zoom. Klik tombol untuk sudut pandang.</p>
+<p><b>Layout:</b> pintu di ujung kiri sisi depan; lemari + meja rias di kiri; meja gaming di belakang; kasur di kanan.</p>
+<p>Kasur 160×200 cm · Gaming 120×60 cm · Rias 80×45 cm · Lemari 112×45 cm</p>
+<div id="buttons">
+<button onclick="preset('front')">Dari pintu</button>
+<button onclick="preset('top')">Atas</button>
+<button onclick="preset('left')">Kiri</button>
+<button onclick="preset('right')">Kanan</button>
+<button onclick="preset('reset')">Reset</button>
+</div>
+</div>
+<div id="hint">Mouse: drag putar • Scroll: zoom • HP: geser & pinch</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+const canvas=document.querySelector('#view');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.1;
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#171923');
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,100);
+camera.position.set(4.7,4.1,5.6);
+const controls=new OrbitControls(camera,renderer.domElement); controls.target.set(0,1,0); controls.enableDamping=true; controls.dampingFactor=.07; controls.maxPolarAngle=Math.PI*.48; controls.minDistance=3.4; controls.maxDistance=10;
+scene.add(new THREE.HemisphereLight(0xcbd8ff,0x39303e,2.0));
+const light=new THREE.DirectionalLight(0xffffff,2.2); light.position.set(-3,7,4); light.castShadow=true; light.shadow.mapSize.set(1024,1024); scene.add(light);
+const warm=new THREE.PointLight(0xffc77d,18,4); warm.position.set(-1.2,2.2,0.8); scene.add(warm);
+const blue=new THREE.PointLight(0x596bff,15,5); blue.position.set(1.1,2.1,-1.2); scene.add(blue);
+function mat(color,rough=.8,metal=0){return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal})}
+const wall=mat('#e5e2df'), floorMat=mat('#aaa7a4',.45), wood=mat('#6e4934'), dark=mat('#252833'), white=mat('#e9e5df'), blueMat=new THREE.MeshStandardMaterial({color:'#4f5aff',emissive:'#2738ff',emissiveIntensity:1.5});
+function box(parent,x,y,z,w,h,d,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function line(parent,a,b,color='#6d7cff'){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a),new THREE.Vector3(...b)]);parent.add(new THREE.Line(g,new THREE.LineBasicMaterial({color})))}
+const room=new THREE.Group();scene.add(room);
+// floor, 3x3m
+box(room,0,-.08,0,3,.16,3,floorMat);
+// walls, front wall with door gap at left end; room is open at front for viewing
+box(room,-1.05,1.35,-1.5,.9,2.7,.12,wall); box(room,.75,1.35,-1.5,1.5,2.7,.12,wall);
+box(room,-1.5,1.35,0,.12,2.7,3,wall); box(room,1.5,1.35,0,.12,2.7,3,wall);
+// door panel at front left, hinged at outer left and shown ajar
+const door=new THREE.Group(); door.position.set(-1.48,0,1.48); room.add(door);
+box(door,.38,1.05,-.02,.76,2.1,.07,wood);
+const knob=new THREE.Mesh(new THREE.SphereGeometry(.035,12,8),mat('#c6b58c',.25,.7));knob.position.set(.68,1.02,-.07);door.add(knob);
+box(room,-.9,2.62,0,1.05,.08,2.85,white); // small ceiling edge/beam
+// bed on right: 1.6 wide across x, 2m length along z
+box(room,.63,.17,.1,1.62,.28,2.05,dark);
+box(room,.63,.34,.1,1.58,.12,2.0,mat('#343746'));
+box(room,.63,.48,.1,1.54,.18,1.96,mat('#44485b'));
+box(room,.63,.59,.1,1.5,.08,1.92,mat('#292d3b'));
+box(room,.63,.75,-.72,1.48,.28,.22,dark);
+box(room,.25,.83,-.68,.62,.18,.38,mat('#9c9bab'));
+box(room,1.0,.83,-.68,.62,.18,.38,mat('#6e7184'));
+// bedside slim led strip
+box(room,-.12,.78,-.75,.025,.025,1.65,blueMat);
+// gaming desk back wall, 120x60
+box(room,-.05,.78,-1.22,1.2,.08,.6,wood);
+box(room,-.55,.39,-1.2,.08,.78,.48,dark);box(room,.42,.39,-1.2,.08,.78,.48,dark);
+box(room,-.05,1.15,-1.36,.72,.42,.045,dark);
+box(room,-.05,1.15,-1.32,.64,.34,.02,mat('#121927'));
+box(room,-.05,1.15,-1.305,.58,.27,.012,blueMat);
+box(room,-.05,.86,-1.1,.42,.025,.22,dark);
+// PC tower and simple RGB fans
+box(room,.52,.55,-1.18,.22,.5,.35,mat('#202431',.3,.25));
+for(let y of [.43,.57,.71]){const fan=new THREE.Mesh(new THREE.TorusGeometry(.055,.012,8,24),blueMat);fan.position.set(.52,y,-.995);scene.add(fan)}
+// chair
+box(room,-.05,.42,-.72,.48,.12,.42,dark);box(room,-.05,.85,-.9,.42,.72,.13,dark);
+box(room,-.05,.05,-.72,.07,.25,.07,mat('#777b87'));
+// wardrobe left rear, 112x45cm
+box(room,-1.25,1.18,-.72,.42,2.25,1.12,white);
+line(room,[-1.04,.3,-1.24],[-1.04,2.05,-1.24],'#8b8a87');line(room,[-1.04,.3,-.2],[-1.04,2.05,-.2],'#8b8a87');
+box(room,-1.02,1.1,-.8,.035,.18,.035,mat('#5c5d62',.3,.6));
+// vanity at left front, 80x45
+box(room,-1.22,.78,.65,.45,.08,.8,white);box(room,-1.22,.42,.65,.38,.64,.65,white);
+box(room,-1.22,1.35,.25,.035,1.0,.52,mat('#35343a',.3,.2));
+const mirror=new THREE.Mesh(new THREE.CircleGeometry(.28,32),new THREE.MeshBasicMaterial({color:'#b9c9e6'}));mirror.position.set(-1.185,1.42,.25);mirror.rotation.y=Math.PI/2;room.add(mirror);
+const mirrorGlow=new THREE.Mesh(new THREE.TorusGeometry(.31,.018,8,32),new THREE.MeshBasicMaterial({color:'#ffe0a8'}));mirrorGlow.position.set(-1.17,1.42,.25);mirrorGlow.rotation.y=Math.PI/2;room.add(mirrorGlow);
+// shelves and small decor on back wall
+box(room,.55,2.05,-1.42,1.0,.055,.22,wood);box(room,.55,1.72,-1.42,.75,.055,.22,wood);
+for(let i=0;i<5;i++){box(room,.18+i*.18,2.2,-1.4,.07,.22,.07,mat(['#b8a7a0','#7c83a7','#c6b79b'][i%3]));}
+for(let i=0;i<4;i++){box(room,.25+i*.18,1.87,-1.4,.07,.2,.07,mat('#a8a8ad'))}
+// modest wall art on right wall
+for(let i=0;i<2;i++){box(room,1.42,1.75,-.45+i*.65,.035,.65,.42,dark);box(room,1.395,1.75,-.45+i*.65,.012,.56,.34,mat(i?'#474e78':'#343d62'))}
+// rug in walkway
+box(room,-.05,.015,.55,.78,.025,1.45,mat('#5a5962'));
+// dimension indicators on floor edges
+line(room,[-1.42,.02,1.25],[1.35,.02,1.25],'#e8e9f3');line(room,[-1.42,.02,1.25],[-1.42,.02,1.15],'#e8e9f3');line(room,[1.35,.02,1.25],[1.35,.02,1.15],'#e8e9f3');
+// floor corner labels in 3D
+function label(text,pos){const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#151824';ctx.fillRect(0,0,512,128);ctx.strokeStyle='#7d87ff';ctx.lineWidth=5;ctx.strokeRect(3,3,506,122);ctx.fillStyle='#fff';ctx.font='bold 42px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,64);const tex=new THREE.CanvasTexture(c);const m=new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide});const p=new THREE.Mesh(new THREE.PlaneGeometry(.9,.22),m);p.position.set(...pos);p.rotation.x=-Math.PI/2;room.add(p)}
+label('KAMAR 3 × 3 m',[0,.03,1.25]);
+function preset(v){if(v==='top'){camera.position.set(0,7,.1);controls.target.set(0,0,0)}else if(v==='left'){camera.position.set(-5,2.8,0);controls.target.set(0,1,0)}else if(v==='right'){camera.position.set(5,2.8,0);controls.target.set(0,1,0)}else if(v==='front'){camera.position.set(0,2.8,6.4);controls.target.set(0,1,0)}else{camera.position.set(4.7,4.1,5.6);controls.target.set(0,1,0)}controls.update()}
+function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>
