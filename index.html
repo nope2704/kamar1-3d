@@ -1,16 +1,22 @@
 <!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="id">
-  <script type="importmap">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script type="importmap">
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
   }
 }
 </script>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kamar 3×3 m — 3D Interaktif</title>
+
+<title>kamar1 3×3 m — 3D Interaktif</title>
+</head>
+
 <style>
 html,body{margin:0;height:100%;background:#11131a;color:#f5f6fa;font-family:system-ui,-apple-system,Segoe UI,Arial}
 #view{width:100%;height:100%;display:block}
@@ -42,6 +48,7 @@ button:hover{background:#3b4260}
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+const canvas = document.querySelector('#view');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
